@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quick FFmpeg</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="window">
+    <div class="title-bar">
+      <span class="title">Quick FFmpeg</span>
+      <div class="window-controls">
+        <button class="window-btn minimize">-</button>
+        <button class="window-btn close">×</button>
+      </div>
+    </div>
+    
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-header">
+        <button id="closeSettingsBtn" class="close-settings-btn">×</button>
+        <button id="themeBtn" class="theme-btn">☀</button> <!-- Sun icon -->
+      </div>
+      <div class="settings-content">
+        <div class="input-group trim-group">
+          <label>Trim Video (seconds)</label>
+          <div class="number-input-group">
+            <input type="number" id="startTime" min="0" placeholder="Start" step="1">
+            <button class="number-btn minus">-</button>
+            <button class="number-btn plus">+</button>
+          </div>
+          <div class="number-input-group">
+            <input type="number" id="endTime" min="0" placeholder="End" step="1">
+            <button class="number-btn minus">-</button>
+            <button class="number-btn plus">+</button>
+          </div>
+        </div>
+        <div class="input-group toggle-group">
+          <label for="muteAudio">Mute Audio</label>
+          <input type="checkbox" id="muteAudio" class="toggle-switch">
+        </div>
+        <div class="input-group">
+          <label for="downloadUrl">Video Link</label>
+          <input type="text" id="downloadUrl" placeholder="Enter video URL">
+          <div class="download-buttons">
+            <button id="pasteYtdlpBtn" class="version-btn">Paste</button>
+            <button id="downloadYtdlpBtn" class="version-btn">Download</button>
+          </div>
+        </div>
+        <div class="version-container">
+          <span id="appVersion" class="version-text">App: Loading...</span>
+          <span id="ffmpegVersion" class="version-text">FFmpeg: Loading...</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="container">
+      <div class="content">
+        <div class="input-group file-input-wrapper">
+          <button class="custom-file-button">Choose Video</button>
+          <input type="file" id="videoInput" accept="video/*">
+          <span id="fileName" class="file-name">No file selected</span>
+        </div>
+        
+        <div class="input-group">
+          <label for="targetSize">Target Size (MB)</label>
+          <div class="number-input-group">
+            <input type="number" id="targetSize" min="1" value="10">
+            <button class="number-btn minus">-</button>
+            <button class="number-btn plus">+</button>
+          </div>
+          <div class="preset-buttons">
+            <button class="preset-btn" data-size="10">10MB</button>
+            <button class="preset-btn" data-size="25">25MB</button>
+            <button class="preset-btn" data-size="50">50MB</button>
+          </div>
+        </div>
+        
+        <div class="input-group">
+          <label for="codecSelect">Video Codec</label>
+          <select id="codecSelect">
+            <option value="libvpx-vp9" selected>VP9</option>
+            <option value="libx264">H.264</option>
+            <option value="libx265">H.265/HEVC</option>
+            <option value="libaom-av1">AV1 (libaom)</option>
+            <option value="libsvtav1">AV1 (SVT)</option>
+          </select>
+        </div>
+        
+        <button id="settingsBtn" class="settings-btn">More Options</button>
+        <button id="encodeBtn" class="action-btn">Encode Video</button>
+        <button id="cancelBtn" class="action-btn cancel-btn" style="display: none;">Cancel</button>
+        
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <div class="progress-main-stats">
+            <span id="progressText">0%</span>
+            <span id="timeText">ETA: N/A</span>
+          </div>
+          <div class="progress-extra-stats">
+            <span id="bitrateText">Bitrate: 0kbits/s</span>
+            <span id="speedText">Speed: 0x</span>
+          </div>
+        </div>
+        
+        <div id="statusLog" class="status-log"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="errorModal" class="modal">
+    <div class="modal-content">
+      <span id="closeModal" class="close-modal">×</span>
+      <p id="errorMessage"></p>
+    </div>
+  </div>
+  
+  <script src="renderer.js"></script>
+</body>
+</html>

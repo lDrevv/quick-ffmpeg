@@ -1,0 +1,31 @@
+{
+  "name": "quick-ffmpeg",
+  "version": "1.0.0",
+  "description": "A simple FFmpeg-based video encoding tool",
+  "author": "Drew <your.email@example.com>",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^28.2.3",
+    "electron-builder": "^24.13.3"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "^2.1.2"
+  },
+  "build": {
+    "appId": "com.example.quickffmpeg",
+    "productName": "Quick FFmpeg",
+    "linux": {
+      "target": ["dir"],
+      "category": "Utility"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/*/{CHANGELOG.md,README.md,*.{iml,md}}",
+      "!**/node_modules/*.{o,a,so,dylib}"
+    ]
+  }
+}

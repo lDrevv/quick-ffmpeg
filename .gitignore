@@ -1,0 +1,36 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist/
+*.exe
+*.dmg
+*.AppImage
+*.zip
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Electron-specific
+electron-builder.yml
+electron-out/
+
+# Development tools
+.vscode/
+.idea/
+*.sublime-*
+
+# Local temp directory used in main.js
+.quick-ffmpeg/
