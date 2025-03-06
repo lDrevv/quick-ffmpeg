@@ -4,7 +4,7 @@ const { spawn, exec } = require('child_process');
 const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
-const https = require('https'); // For GitHub API requests
+const https = require('https');
 
 const verbs = ['Shiny', 'Smooth', 'Quick', 'Bright', 'Silent', 'Swift', 'Bold', 'Gentle', 'Fierce', 'Calm'];
 const nouns = ['Dragon', 'Eagle', 'River', 'Forest', 'Mountain', 'Wolf', 'Sky', 'Lake', 'Tiger', 'Cloud'];
@@ -56,11 +56,11 @@ function checkForNewVersion() {
   const currentVersion = app.getVersion();
   const options = {
     hostname: 'api.github.com',
-    path: '/repos/lDrevv/quick-ffmpeg/releases/latest', // Replace with your username/repo
+    path: '/repos/lDrevv/quick-ffmpeg/contents/package.json', // Fetch package.json
     method: 'GET',
     headers: {
-      'User-Agent': 'Quick-FFmpeg', // GitHub API requires a User-Agent
-      'Accept': 'application/vnd.github.v3+json'
+      'User-Agent': 'Quick-FFmpeg', // Required by GitHub API
+      'Accept': 'application/vnd.github.v3.raw' // Get raw file content
     }
   };
 
@@ -69,17 +69,17 @@ function checkForNewVersion() {
     res.on('data', (chunk) => data += chunk);
     res.on('end', () => {
       try {
-        const release = JSON.parse(data);
-        const latestVersion = release.tag_name.replace('v', ''); // e.g., "1.0.2"
+        const packageJson = JSON.parse(data); // Parse the JSON content
+        const latestVersion = packageJson.version; // Extract the "version" field
         if (compareVersions(latestVersion, currentVersion) > 0) {
           const mainWindow = BrowserWindow.getAllWindows()[0];
           mainWindow.webContents.send('new-version-available', {
             version: latestVersion,
-            url: release.html_url
+            url: 'https://github.com/lDrevv/quick-ffmpeg/blob/main/package.json' // Link to package.json
           });
         }
       } catch (err) {
-        console.error('Error parsing GitHub API response:', err);
+        console.error('Error parsing package.json from GitHub:', err);
       }
     });
   });
