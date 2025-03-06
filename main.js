@@ -54,51 +54,49 @@ function createWindow() {
 
 function checkForNewVersion() {
   const currentVersion = app.getVersion();
-  console.log(`Current local version: ${currentVersion}`); // Debug log
+  console.log(`Current local version: ${currentVersion}`);
 
   const options = {
     hostname: 'api.github.com',
-    path: '/repos/lDrevv/quick-ffmpeg/contents/package.json', // Fetch package.json
+    path: '/repos/lDrevv/quick-ffmpeg/contents/package.json',
     method: 'GET',
     headers: {
-      'User-Agent': 'Quick-FFmpeg', // Required by GitHub API
-      'Accept': 'application/vnd.github.v3.raw' // Get raw file content
+      'User-Agent': 'Quick-FFmpeg',
+      'Accept': 'application/vnd.github.v3.raw'
     }
   };
 
   const req = https.request(options, (res) => {
-    console.log(`GitHub API response status: ${res.statusCode}`); // Debug log
+    console.log(`GitHub API response status: ${res.statusCode}`);
     let data = '';
     res.on('data', (chunk) => data += chunk);
     res.on('end', () => {
       try {
         const packageJson = JSON.parse(data);
         const latestVersion = packageJson.version;
-        console.log(`Latest version from GitHub: ${latestVersion}`); // Debug log
-        console.log(`Comparing ${latestVersion} > ${currentVersion}: ${compareVersions(latestVersion, currentVersion)}`); // Debug log
+        console.log(`Latest version from GitHub: ${latestVersion}`);
+        console.log(`Comparing ${latestVersion} > ${currentVersion}: ${compareVersions(latestVersion, currentVersion)}`);
 
         if (compareVersions(latestVersion, currentVersion) > 0) {
-          console.log('New version detected, sending notification'); // Debug log
-          const mainWindow = BrowserWindow.getAllWindows()[0];
-          mainWindow.webContents.send('new-version-available', {
-            version: latestVersion,
-            url: 'https://github.com/lDrevv/quick-ffmpeg/releases' // Point to releases
-          });
+          console.log('New version detected, delaying notification');
+          setTimeout(() => {
+            const mainWindow = BrowserWindow.getAllWindows()[0];
+            mainWindow.webContents.send('new-version-available', {
+              version: latestVersion,
+              url: 'https://github.com/lDrevv/quick-ffmpeg/'
+            });
+          }, 5000); // Delay by 5 seconds
         } else {
-          console.log('No new version available'); // Debug log
+          console.log('No new version available');
         }
       } catch (err) {
         console.error('Error parsing package.json from GitHub:', err);
-        const mainWindow = BrowserWindow.getAllWindows()[0];
-        mainWindow.webContents.send('version-check-error', 'Failed to parse GitHub package.json');
       }
     });
   });
 
   req.on('error', (err) => {
     console.error('Error fetching package.json from GitHub:', err);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    mainWindow.webContents.send('version-check-error', `Failed to fetch package.json: ${err.message}`);
   });
 
   req.end();

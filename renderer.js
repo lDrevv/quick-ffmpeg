@@ -1,4 +1,4 @@
-const { ipcRenderer, clipboard } = require('electron');
+const { ipcRenderer, clipboard, shell } = require('electron');
 
 function appendToLog(message) {
   const log = document.getElementById('statusLog');
@@ -246,7 +246,17 @@ ipcRenderer.on('duration-error', (event, error) => {
   showError(`Duration detection failed: ${error}`);
 });
 
-// New version notification listener
 ipcRenderer.on('new-version-available', (event, { version, url }) => {
-  appendToLog(`New version v${version} available! Download it from: ${url}`);
+  const updateBanner = document.getElementById('updateBanner');
+  const updateMessage = document.getElementById('updateMessage');
+  const updateLink = document.getElementById('updateLink');
+
+  updateMessage.textContent = `New version v${version} available!`;
+  updateLink.href = url; // Set the URL
+  updateLink.addEventListener('click', (e) => {
+    e.preventDefault(); // Prevent default anchor behavior
+    shell.openExternal(url); // Open URL in default browser
+  });
+
+  updateBanner.style.display = 'flex'; // Show the banner
 });

@@ -664,4 +664,41 @@ body.light {
 .light .progress-extra-stats {
   color: #1a1a1a !important; /* Fix bitrate and speed */
 }
-/* Test auto-version bump 1.0.6 */
+/* In styles.css, add at the end of the file */
+.update-banner {
+  background: #4CAF50;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.update-banner a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.update-banner a:hover {
+  color: #ffffff;
+}
+
+/* Light theme adjustments */
+body.light .update-banner {
+  background: #45a049;
+  color: #ffffff !important;
+}
+
+body.light .update-banner a {
+  color: #ff8c00 !important;
+}
+
+body.light .update-banner a:hover {
+  color: #ffffff !important;
+}
