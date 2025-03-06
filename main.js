@@ -1,10 +1,10 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
-const { autoUpdater } = require('electron-updater'); // Import autoUpdater
 const ffmpeg = require('fluent-ffmpeg');
 const { spawn, exec } = require('child_process');
 const path = require('path');
 const os = require('os');
 const fs = require('fs').promises;
+const https = require('https'); // For GitHub API requests
 
 const verbs = ['Shiny', 'Smooth', 'Quick', 'Bright', 'Silent', 'Swift', 'Bold', 'Gentle', 'Fierce', 'Calm'];
 const nouns = ['Dragon', 'Eagle', 'River', 'Forest', 'Mountain', 'Wolf', 'Sky', 'Lake', 'Tiger', 'Cloud'];
@@ -48,59 +48,60 @@ function createWindow() {
   ipcMain.on('minimize-window', () => win.minimize());
   ipcMain.on('close-window', () => win.close());
 
-  // Check for updates after the window is created
-  checkForUpdates();
+  // Check for new version after window is created
+  checkForNewVersion();
 }
 
-function checkForUpdates() {
-  autoUpdater.logger = require('electron-log'); // Optional: for logging
-  autoUpdater.logger.transports.file.level = 'info'; // Log to file
+function checkForNewVersion() {
+  const currentVersion = app.getVersion();
+  const options = {
+    hostname: 'api.github.com',
+    path: '/repos/lDrevv/quick-ffmpeg/releases/latest', // Replace with your username/repo
+    method: 'GET',
+    headers: {
+      'User-Agent': 'Quick-FFmpeg', // GitHub API requires a User-Agent
+      'Accept': 'application/vnd.github.v3+json'
+    }
+  };
 
-  autoUpdater.on('checking-for-update', () => {
-    console.log('Checking for update...');
+  const req = https.request(options, (res) => {
+    let data = '';
+    res.on('data', (chunk) => data += chunk);
+    res.on('end', () => {
+      try {
+        const release = JSON.parse(data);
+        const latestVersion = release.tag_name.replace('v', ''); // e.g., "1.0.2"
+        if (compareVersions(latestVersion, currentVersion) > 0) {
+          const mainWindow = BrowserWindow.getAllWindows()[0];
+          mainWindow.webContents.send('new-version-available', {
+            version: latestVersion,
+            url: release.html_url
+          });
+        }
+      } catch (err) {
+        console.error('Error parsing GitHub API response:', err);
+      }
+    });
   });
 
-  autoUpdater.on('update-available', (info) => {
-    console.log('Update available:', info.version);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    mainWindow.webContents.send('update-available', info);
+  req.on('error', (err) => {
+    console.error('Error checking for new version:', err);
   });
 
-  autoUpdater.on('update-not-available', (info) => {
-    console.log('Update not available.');
-  });
+  req.end();
+}
 
-  autoUpdater.on('download-progress', (progressObj) => {
-    let log_message = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}%`;
-    console.log(log_message);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    mainWindow.webContents.send('download-progress', progressObj);
-  });
-
-  autoUpdater.on('update-downloaded', (info) => {
-    console.log('Update downloaded; will install now');
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    mainWindow.webContents.send('update-downloaded', info);
-    autoUpdater.quitAndInstall(); // Install the update and restart the app
-  });
-
-  autoUpdater.on('error', (err) => {
-    console.error('Error in auto-updater:', err);
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    mainWindow.webContents.send('update-error', err.message);
-  });
-
-  // Set the update URL to your GitHub releases
-  autoUpdater.setFeedURL({
-    provider: 'github',
-    owner: 'your-github-username', // Replace with your GitHub username
-    repo: 'quick-ffmpeg', // Replace with your repository name
-    private: false // Set to true if your repo is private, and provide token below
-    // token: 'your-github-personal-access-token' // Required if private
-  });
-
-  // Start checking for updates
-  autoUpdater.checkForUpdates();
+// Simple version comparison function
+function compareVersions(a, b) {
+  const partsA = a.split('.').map(Number);
+  const partsB = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
+    if (numA > numB) return 1;
+    if (numA < numB) return -1;
+  }
+  return 0;
 }
 
 app.whenReady().then(() => {
