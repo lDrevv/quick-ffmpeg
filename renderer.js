@@ -245,3 +245,21 @@ ipcRenderer.on('duration', (event, duration) => {
 ipcRenderer.on('duration-error', (event, error) => {
   showError(`Duration detection failed: ${error}`);
 });
+
+// Update-related IPC listeners
+ipcRenderer.on('update-available', (event, info) => {
+  appendToLog(`Update available: v${info.version}. Downloading...`);
+});
+
+ipcRenderer.on('download-progress', (event, progressObj) => {
+  const percent = Math.round(progressObj.percent);
+  appendToLog(`Update download progress: ${percent}%`);
+});
+
+ipcRenderer.on('update-downloaded', (event, info) => {
+  appendToLog(`Update v${info.version} downloaded. Restarting app to install...`);
+});
+
+ipcRenderer.on('update-error', (event, error) => {
+  showError(`Update error: ${error}`);
+});

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater'); // Import autoUpdater
 const ffmpeg = require('fluent-ffmpeg');
 const { spawn, exec } = require('child_process');
 const path = require('path');
@@ -26,26 +27,80 @@ function generateRandomName(url = null) {
 
 function createWindow() {
   const win = new BrowserWindow({
-  width: 500,
-  height: 600,
-  frame: false,
-  webPreferences: {
-    preload: path.join(__dirname, 'renderer.js'),
-    nodeIntegration: true,
-    contextIsolation: false
-  },
-  resizable: false,
-  backgroundColor: '#00000000',
-  titleBarStyle: 'hidden',
-  transparent: true,
-  vibrancy: 'dark',
-  icon: path.join(__dirname, 'icon.png') // Add this line
-});
+    width: 500,
+    height: 600,
+    frame: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'renderer.js'),
+      nodeIntegration: true,
+      contextIsolation: false
+    },
+    resizable: false,
+    backgroundColor: '#00000000',
+    titleBarStyle: 'hidden',
+    transparent: true,
+    vibrancy: 'dark',
+    icon: path.join(__dirname, 'icon.png')
+  });
 
   win.loadFile('index.html');
   
   ipcMain.on('minimize-window', () => win.minimize());
   ipcMain.on('close-window', () => win.close());
+
+  // Check for updates after the window is created
+  checkForUpdates();
+}
+
+function checkForUpdates() {
+  autoUpdater.logger = require('electron-log'); // Optional: for logging
+  autoUpdater.logger.transports.file.level = 'info'; // Log to file
+
+  autoUpdater.on('checking-for-update', () => {
+    console.log('Checking for update...');
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Update available:', info.version);
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    mainWindow.webContents.send('update-available', info);
+  });
+
+  autoUpdater.on('update-not-available', (info) => {
+    console.log('Update not available.');
+  });
+
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}%`;
+    console.log(log_message);
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    mainWindow.webContents.send('download-progress', progressObj);
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    console.log('Update downloaded; will install now');
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    mainWindow.webContents.send('update-downloaded', info);
+    autoUpdater.quitAndInstall(); // Install the update and restart the app
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('Error in auto-updater:', err);
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    mainWindow.webContents.send('update-error', err.message);
+  });
+
+  // Set the update URL to your GitHub releases
+  autoUpdater.setFeedURL({
+    provider: 'github',
+    owner: 'your-github-username', // Replace with your GitHub username
+    repo: 'quick-ffmpeg', // Replace with your repository name
+    private: false // Set to true if your repo is private, and provide token below
+    // token: 'your-github-personal-access-token' // Required if private
+  });
+
+  // Start checking for updates
+  autoUpdater.checkForUpdates();
 }
 
 app.whenReady().then(() => {
@@ -100,8 +155,8 @@ ipcMain.on('encode-video', (event, { inputFile, targetSize, codec, muteAudio, st
     if (endTime !== null) encodeOptions.outputOptions.push(`-to ${endTime}`);
 
     let currentProgress = { percent: 0, eta: 0, bitrate: 0, speed: 0 };
-    let passCount = isTwoPass ? 2 : 1; // Total number of passes
-    let currentPass = 1; // Track current pass
+    let passCount = isTwoPass ? 2 : 1;
+    let currentPass = 1;
     let totalDuration = endTime && startTime ? endTime - startTime : duration;
 
     const updateProgress = () => {
@@ -109,8 +164,7 @@ ipcMain.on('encode-video', (event, { inputFile, targetSize, codec, muteAudio, st
     };
 
     const calculateProgress = (progressPercent) => {
-      // Consolidate progress across all passes
-      const passWeight = 1 / passCount; // Each pass contributes equally to total progress
+      const passWeight = 1 / passCount;
       currentProgress.percent = ((currentPass - 1) * passWeight + (progressPercent / 100) * passWeight) * 100;
     };
 
@@ -132,8 +186,7 @@ ipcMain.on('encode-video', (event, { inputFile, targetSize, codec, muteAudio, st
         const seconds = parseFloat(timeMatch[3]);
         const currentTime = hours * 3600 + minutes * 60 + seconds;
         if (speedMatch && parseFloat(speedMatch[1]) > 0) {
-          const speed = parseFloat(speedMatch[1]);
-          calculateETA(currentTime, speed);
+          calculateETA(currentTime, parseFloat(speedMatch[1]));
         }
       }
       if (speedMatch) {
@@ -170,7 +223,7 @@ ipcMain.on('encode-video', (event, { inputFile, targetSize, codec, muteAudio, st
         .on('error', err => event.reply('encode-error', err.message))
         .save('/dev/null')
         .on('end', () => {
-          currentPass = 2; // Switch to second pass
+          currentPass = 2;
           const secondPass = applyOptions(
             ffmpeg(inputFile)
               .videoCodec(codec)
@@ -274,10 +327,10 @@ ipcMain.on('download-ytdlp', async (event, { url, targetSize, codec, muteAudio, 
     const percentMatch = output.match(/(\d+\.\d+)%/);
     const timeMatch = output.match(/ETA (\d+):(\d+)/);
     const speedMatch = output.match(/@ (\d+\.\d+)MiB\/s/);
-    if (percentMatch) currentProgress.percent = parseFloat(percentMatch[1]) * 0.5; // Download is 50% of total process
+    if (percentMatch) currentProgress.percent = parseFloat(percentMatch[1]) * 0.5;
     if (timeMatch) {
       const eta = parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
-      currentProgress.eta = eta >= 0 ? eta * 2 : 0; // Double ETA to account for encoding
+      currentProgress.eta = eta >= 0 ? eta * 2 : 0;
     }
     if (speedMatch) currentProgress.speed = parseFloat(speedMatch[1]);
     event.reply('download-progress', currentProgress);
@@ -339,7 +392,7 @@ ipcMain.on('download-ytdlp', async (event, { url, targetSize, codec, muteAudio, 
         }
 
         const calculateEncodeProgress = (progressPercent) => {
-          const passWeight = 0.5 / passCount; // Encoding is 50% of total process, split by passes
+          const passWeight = 0.5 / passCount;
           currentProgress.percent = 50 + ((currentPass - 1) * passWeight + (progressPercent / 100) * passWeight) * 100;
         };
 
