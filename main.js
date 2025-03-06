@@ -26,20 +26,21 @@ function generateRandomName(url = null) {
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 500,
-    height: 600,
-    frame: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'renderer.js'),
-      nodeIntegration: true,
-      contextIsolation: false
-    },
-    resizable: false,
-    backgroundColor: '#00000000',
-    titleBarStyle: 'hidden',
-    transparent: true,
-    vibrancy: 'dark'
-  });
+  width: 500,
+  height: 600,
+  frame: false,
+  webPreferences: {
+    preload: path.join(__dirname, 'renderer.js'),
+    nodeIntegration: true,
+    contextIsolation: false
+  },
+  resizable: false,
+  backgroundColor: '#00000000',
+  titleBarStyle: 'hidden',
+  transparent: true,
+  vibrancy: 'dark',
+  icon: path.join(__dirname, 'icon.png') // Add this line
+});
 
   win.loadFile('index.html');
   

@@ -17,6 +17,7 @@
   },
   "build": {
     "appId": "com.example.quickffmpeg",
+    "icon": "icon.png",
     "productName": "Quick FFmpeg",
     "linux": {
       "target": ["dir"],
